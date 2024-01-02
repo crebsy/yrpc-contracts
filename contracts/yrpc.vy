@@ -10,6 +10,7 @@ fee_rate: public(uint256)
 
 event TopupReceived:
   apiKeyHash: indexed(String[32])
+  topupToken: address
   topupAmount: uint256
   topupBalance: uint256
   feeRate: uint256
@@ -48,4 +49,10 @@ def topup(apiKeyHash: String[32], topupAmount: uint256):
   assert topupAmount > 0, "topup amount too small"
   self.fee_token.transferFrom(msg.sender, self.fee_recipient, topupAmount)
   topupBalance: uint256 = topupAmount / self.fee_rate
-  log TopupReceived(apiKeyHash, topupAmount, topupBalance, self.fee_rate)
+  log TopupReceived(
+    apiKeyHash,
+    self.fee_token.address,
+    topupAmount,
+    topupBalance,
+    self.fee_rate
+  )
