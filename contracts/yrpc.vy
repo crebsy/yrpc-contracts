@@ -1,4 +1,4 @@
-# @version 0.3.9
+# @version 0.3.10
 
 from vyper.interfaces import ERC20
 
@@ -9,7 +9,7 @@ fee_recipient: public(address)
 fee_rate: public(uint256)
 
 event TopupReceived:
-  apiKeyHash: indexed(String[32])
+  apiKeyHash: String[64]
   topupToken: address
   topupAmount: uint256
   topupBalance: uint256
@@ -17,6 +17,9 @@ event TopupReceived:
 
 @external
 def __init__(fee_token_address: address, fee_recipient: address, fee_rate: uint256):
+  assert fee_token_address != empty(address), "fee_token_address can't be ZERO_ADDRESS"
+  assert fee_recipient != empty(address), "fee_recipient can't be ZERO_ADDRESS"
+  assert fee_rate > 0, "fee_rate too small"
   self.owner = msg.sender
   self.fee_token = ERC20(fee_token_address)
   self.fee_recipient = fee_recipient
@@ -45,9 +48,10 @@ def set_fee_rate(new_fee_rate: uint256):
   self.fee_rate = new_fee_rate
 
 @external
-def topup(apiKeyHash: String[32], topupAmount: uint256):
-  assert topupAmount > 0, "topup amount too small"
+def topup(apiKeyHash: String[64], topupAmount: uint256):
+  assert topupAmount >= self.fee_rate, "topup amount too small"
   self.fee_token.transferFrom(msg.sender, self.fee_recipient, topupAmount)
+
   topupBalance: uint256 = topupAmount / self.fee_rate
   log TopupReceived(
     apiKeyHash,
